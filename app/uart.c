@@ -395,6 +395,11 @@ static void CMD_052D(const uint8_t *pBuffer)
 	SendReply(&Reply, sizeof(Reply));
 }
 
+// session init, sends back version info and state
+// timestamp is a session id really
+// this command also disables dual watch, crossband, 
+// DTMF side tones, freq reverse, PTT ID, DTMF decoding, frequency offset
+// exits power save, sets main VFO to upper,
 static void CMD_052F(const uint8_t *pBuffer)
 {
 	const CMD_052F_t *pCmd = (const CMD_052F_t *)pBuffer;
@@ -427,6 +432,42 @@ static void CMD_052F(const uint8_t *pBuffer)
 	BACKLIGHT_TurnOff();
 
 	SendVersion();
+}
+
+static void CMD_0601_ReadBK4819Reg(const uint8_t *pBuffer)
+{
+	typedef struct  __attribute__((__packed__)) {
+		Header_t header;
+		uint8_t reg;
+	} CMD_0601_t;
+
+	CMD_0601_t *cmd = (CMD_0601_t*) pBuffer;
+
+	struct  __attribute__((__packed__)) {
+		Header_t header;
+		struct {
+			uint8_t reg;
+			uint16_t value;
+		} data;
+	} reply;
+
+	reply.header.ID = 0x0601;
+	reply.header.Size = sizeof(reply.data);
+	reply.data.reg = cmd->reg;
+	reply.data.value = BK4819_ReadRegister(cmd->reg);
+	SendReply(&reply, sizeof(reply));
+}
+
+static void CMD_0602_WriteBK4819Reg(const uint8_t *pBuffer)
+{
+	typedef struct  __attribute__((__packed__)) {
+		Header_t header;
+		uint8_t reg;
+		uint16_t value;
+	} CMD_0602_t;
+
+	CMD_0602_t *cmd = (CMD_0602_t*) pBuffer;
+	BK4819_WriteRegister(cmd->reg, cmd->value);
 }
 
 bool UART_IsCommandAvailable(void)
@@ -567,5 +608,13 @@ void UART_HandleCommand(void)
 				NVIC_SystemReset();
 			#endif
 			break;
+
+		case 0x0601:
+			CMD_0601_ReadBK4819Reg(UART_Command.Buffer);
+			break;
+		
+		case 0x0602:
+			CMD_0602_WriteBK4819Reg(UART_Command.Buffer);
+			break;		
 	}
 }
