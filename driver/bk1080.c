@@ -67,11 +67,9 @@ void BK1080_Init(uint16_t Frequency, bool bDoScan)
 		}
 
 		BK1080_WriteRegister(BK1080_REG_05_SYSTEM_CONFIGURATION2, 0x0A5F);
-		BK1080_SetFrequency(Frequency);
+		BK1080_SetFrequency(Frequency); // use excisting function, wins 32 bytes
 		//BK1080_WriteRegister(BK1080_REG_03_CHANNEL, Frequency - 760);
-
 		//SYSTEM_DelayMs(10);
-
 		//BK1080_WriteRegister(BK1080_REG_03_CHANNEL, (Frequency - 760) | 0x8000);
 	}
 	else
